@@ -8,6 +8,6 @@ import (
 
 func main() {
 	fmt.Println("Horse movements: ", horse.Movements(&horse.Field{"a", 1}))
-	fmt.Println("...")
+	fmt.Println("======================")
 	cards.Sorting()
 }
