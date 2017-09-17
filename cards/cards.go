@@ -2,20 +2,18 @@ package cards
 
 import (
 	"fmt"
-	"math/rand"
-	"time"
+	"sort"
 )
 
 const (
 	DESK_JOKER_COUNT = 2
-	DESK_CARDS_COUNT = 4*9 + DESK_JOKER_COUNT
 )
 
-type card struct {
-	sult, precedences, position int
+type Card struct {
+	sult, precedences int
 }
 
-var desk [DESK_CARDS_COUNT]card
+var desk []Card
 
 var sults = [5]string{"heart", "diamond", "club", "spade", "joker"}
 
@@ -31,87 +29,83 @@ var precedences = map[int]string{
 	14: "ace",
 }
 
-func exists_value(arr *[]int, value int) bool {
-	for _, val := range *arr {
-		if val == value {
-			return true
-		}
-	}
-	*arr = append(*arr, value)
-	return false
+type lessFunc func(p1, p2 *Card) bool
+
+type multiSorter struct {
+	changes []Card
+	less    []lessFunc
 }
 
-func randimize(args ...int) (result int) {
-	rand.Seed(time.Now().UTC().UnixNano())
+func (ms *multiSorter) Sort(desk []Card) {
+	ms.changes = desk
+	sort.Sort(ms)
+}
 
-	if len(args) > 1 {
-		result = rand.Intn((args[0]+1)-args[1]) + args[1]
-	} else {
-		result = rand.Intn(args[0])
+func (ms *multiSorter) Len() int {
+	return len(ms.changes)
+}
+
+func (ms *multiSorter) Swap(i, j int) {
+	ms.changes[i], ms.changes[j] = ms.changes[j], ms.changes[i]
+}
+
+func OrderedBy(less ...lessFunc) *multiSorter {
+	return &multiSorter{
+		less: less,
 	}
-	return result
+}
+
+func (ms *multiSorter) Less(i, j int) bool {
+	p, q := &ms.changes[i], &ms.changes[j]
+	// Try all but the last comparison.
+	var k int
+	for k = 0; k < len(ms.less)-1; k++ {
+		less := ms.less[k]
+		switch {
+		case less(p, q):
+			// p < q, so we have a decision.
+			return true
+		case less(q, p):
+			// p > q, so we have a decision.
+			return false
+		}
+		// p == q; try the next comparison.
+	}
+	// All comparisons to here said "equal", so just return whatever
+	// the final comparison reports.
+	return ms.less[k](p, q)
 }
 
 func fill_desk() {
-	var (
-		use_position []int
-		pos          int
-	)
+	// fill joker position in desk
+	for i := 0; i < DESK_JOKER_COUNT; i++ {
+		desk = append(desk, Card{len(sults) - 1, 15})
+	}
 	// fill card position in desk
-	cnt := 0
 	for j := 0; j < len(precedences); j++ {
 		for i := 0; i < len(sults)-1; i++ {
-			// fmt.Println(use_position)
-			// fmt.Println(desk)
-			pos = randimize(DESK_CARDS_COUNT)
-			for exists_value(&use_position, pos) {
-				pos = randimize(DESK_CARDS_COUNT)
-			}
-
-			desk[cnt].sult = i
-			desk[cnt].precedences = j + 6
-			desk[cnt].position = pos
-
-			cnt++
+			desk = append(desk, Card{i, j + 6})
 		}
-	}
-	// fill joker position in desk
-	for i := 0; i < DESK_CARDS_COUNT; i++ {
-		if !exists_value(&use_position, i) {
-			desk[cnt].sult = len(sults) - 1
-			desk[cnt].precedences = 15
-			desk[cnt].position = i
-			cnt++
-		}
-	}
-}
-
-func print_desk() {
-	var line []card
-	for i := 0; i < len(sults); i++ {
-		line = line[:0]
-		for j := 0; j < DESK_CARDS_COUNT; j++ {
-			if desk[j].sult == i {
-				line = append(line, desk[j])
-			}
-		}
-		fmt.Println(line)
 	}
 }
 
 func Sorting() {
 	fill_desk()
-	print_desk()
+	fmt.Println("Source desk")
+	fmt.Println(desk)
 
-	joker_pos := DESK_CARDS_COUNT - DESK_JOKER_COUNT
-	for idx := 0; idx < DESK_CARDS_COUNT; idx++ {
-		if desk[idx].sult == len(sults)-1 {
-			desk[idx].position = joker_pos
-			joker_pos++
-		} else {
-			desk[idx].position = desk[idx].sult*len(precedences) + (desk[idx].precedences - 6)
-		}
+	sult := func(c1, c2 *Card) bool {
+		return c1.sult < c2.sult
 	}
-	fmt.Println("...")
-	print_desk()
+	precedences := func(c1, c2 *Card) bool {
+		return c1.precedences < c2.precedences
+	}
+
+	OrderedBy(sult).Sort(desk)
+	fmt.Println("... Order by sult")
+	fmt.Println(desk)
+
+	OrderedBy(sult, precedences).Sort(desk)
+	fmt.Println("...Order by sult & precedences")
+	fmt.Println(desk)
 }
