@@ -9,5 +9,8 @@ import (
 func main() {
 	fmt.Println("Horse movements: ", horse.Movements(&horse.Field{"a", 1}))
 	fmt.Println("======================")
-	cards.Sorting()
+	desk := cards.FillDesk(2)
+	fmt.Println(desk)
+	cards.Sorting(&desk)
+	fmt.Println(desk)
 }

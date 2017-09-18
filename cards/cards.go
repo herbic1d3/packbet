@@ -1,7 +1,7 @@
 package cards
 
 import (
-	"fmt"
+	// "fmt"
 	"sort"
 )
 
@@ -12,8 +12,6 @@ const (
 type Card struct {
 	sult, precedences int
 }
-
-var desk []Card
 
 var sults = [5]string{"heart", "diamond", "club", "spade", "joker"}
 
@@ -76,9 +74,10 @@ func (ms *multiSorter) Less(i, j int) bool {
 	return ms.less[k](p, q)
 }
 
-func fill_desk() {
+func FillDesk(joker_count int) []Card {
+	var desk []Card
 	// fill joker position in desk
-	for i := 0; i < DESK_JOKER_COUNT; i++ {
+	for i := 0; i < joker_count; i++ {
 		desk = append(desk, Card{len(sults) - 1, 15})
 	}
 	// fill card position in desk
@@ -87,25 +86,24 @@ func fill_desk() {
 			desk = append(desk, Card{i, j + 6})
 		}
 	}
+	return desk
 }
 
-func Sorting() {
-	fill_desk()
-	fmt.Println("Source desk")
-	fmt.Println(desk)
+func Sorting(desk *[]Card) {
+	if len(*desk) == 0 {
+		*desk = FillDesk(DESK_JOKER_COUNT)
+	}
 
 	sult := func(c1, c2 *Card) bool {
 		return c1.sult < c2.sult
 	}
-	precedences := func(c1, c2 *Card) bool {
+	precedence := func(c1, c2 *Card) bool {
 		return c1.precedences < c2.precedences
 	}
 
-	OrderedBy(sult).Sort(desk)
-	fmt.Println("... Order by sult")
-	fmt.Println(desk)
+	// OrderedBy(sult).Sort(desk)
+	// fmt.Println("... Order by sult")
+	// fmt.Println(desk)
 
-	OrderedBy(sult, precedences).Sort(desk)
-	fmt.Println("...Order by sult & precedences")
-	fmt.Println(desk)
+	OrderedBy(sult, precedence).Sort(*desk)
 }
